@@ -37,8 +37,10 @@ def dbt_models(context, dbt: DbtCliResource):
 
 
 job_diario = define_asset_job("pipeline_diario", selection=AssetSelection.all())
+# 13:00 CDMX: Banxico determina el FIX alrededor del mediodía, así cada corrida
+# trae el FIX del mismo día. La vela diaria de Binance ya cerró (18:00 CDMX del día anterior).
 programacion_diaria = ScheduleDefinition(
-    job=job_diario, cron_schedule="0 7 * * *", execution_timezone="America/Mexico_City",
+    job=job_diario, cron_schedule="0 13 * * *", execution_timezone="America/Mexico_City",
     default_status=DefaultScheduleStatus.RUNNING,  # activa sin tocar la interfaz
 )
 

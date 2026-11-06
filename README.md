@@ -21,7 +21,7 @@ reemplaza al valor viejo sin perder el historial de lo que se publicó.
 |---|---|
 | `ingesta/` | Descarga a bronze (Banxico completo, Binance incremental) y reintentos HTTP |
 | `dbt/` | Modelos `staging`, `intermediate`, `marts` y tests de calidad |
-| `monitor_financiero/` | Definiciones de Dagster: activos, trabajo y programación diaria (7:00 CDMX) |
+| `monitor_financiero/` | Definiciones de Dagster: activos, trabajo y programación diaria (13:00 CDMX, después del FIX del día) |
 | `docker/` | Configuración de la instancia de Dagster para el contenedor |
 
 ## Requisitos
@@ -46,7 +46,7 @@ docker compose ps
 - Las corridas se ejecutan de una en una (DuckDB admite un solo escritor).
 - Los datos y el historial de Dagster viven en los volúmenes `datos` y `estado`.
 
-Primera carga sin esperar a las 7:00:
+Primera carga sin esperar a las 13:00:
 
 ```bash
 docker compose exec webserver dagster job launch -m monitor_financiero.definitions -j pipeline_diario
