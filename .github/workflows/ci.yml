@@ -44,7 +44,8 @@ jobs:
 
       - name: dbt build (modelos + tests)
         working-directory: dbt
-        run: dbt build --vars "{fecha_referencia: \"$FECHA_REFERENCIA\"}"
+        run: |
+          dbt build --vars "{fecha_referencia: \"$FECHA_REFERENCIA\"}"
 
       - name: Validar definiciones de Dagster
         env:
