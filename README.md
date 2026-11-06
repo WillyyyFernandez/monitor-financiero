@@ -69,6 +69,12 @@ docker compose up -d --force-recreate
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 export DAGSTER_HOME=$PWD/.dagster && mkdir -p .dagster && touch .dagster/dagster.yaml
+(cd dbt && ../.venv/bin/dbt parse)   # regenera el manifest que lee Dagster
 .venv/bin/dagster asset materialize -m monitor_financiero.definitions --select '*'
 .venv/bin/dagster dev -m monitor_financiero.definitions   # interfaz en 127.0.0.1:3000
 ```
+
+Después de agregar o cambiar modelos o tests de dbt, corre `dbt parse` antes de
+`dagster asset materialize`: ese comando usa el manifest existente y falla con
+`KeyError` si no conoce un nodo nuevo. `dagster dev` y la imagen de Docker lo
+regeneran solos.

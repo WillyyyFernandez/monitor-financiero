@@ -20,3 +20,21 @@ models:
         tests: [not_null]
       - name: cierre
         tests: [not_null]
+
+  - name: mart_cripto_vs_fix
+    description: >
+      Precio de BTC, ETH y USDT en pesos según Binance frente al precio implícito con el
+      FIX de Banxico. En fines de semana y feriados se usa el último FIX publicado.
+    columns:
+      - name: fecha
+        tests: [not_null]
+      - name: activo
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['BTC', 'ETH', 'USDT']
+      - name: usd_mxn_fix
+        tests: [not_null]
+      - name: prima_vs_fix_pct
+        description: Precio directo en pesos / (precio en USDT x FIX) - 1, en %. Nulo si no existe el par en pesos ese día.

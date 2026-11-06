@@ -1,0 +1,18 @@
+version: 2
+models:
+  - name: int_calendario
+    description: Un día por fila desde 2020 con su tipo (hábil, fin de semana, feriado bancario, pendiente).
+    columns:
+      - name: fecha
+        tests: [unique, not_null]
+      - name: tipo_dia
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['habil', 'fin_de_semana', 'feriado_bancario', 'pendiente']
+  - name: int_fix_diario
+    description: FIX vigente para cada día del calendario (último publicado).
+    columns:
+      - name: fecha
+        tests: [unique, not_null]
