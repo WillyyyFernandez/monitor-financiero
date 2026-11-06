@@ -1,8 +1,9 @@
 .git
 .venv
+# Ningún archivo .env entra a la imagen, ni siquiera el ejemplo: si alguien lo
+# rellena por error, los tokens quedarían horneados en la imagen.
 .env
 .env.*
-!.env.example
 data
 .dagster
 dbt/target
