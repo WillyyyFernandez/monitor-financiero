@@ -2,8 +2,12 @@
 -- Los feriados se infieren de los datos: un día entre semana sin FIX publicado.
 -- Solo se marca feriado hasta el último FIX conocido; los días posteriores quedan
 -- 'pendiente' (p. ej. hoy, antes de que Banxico publique el FIX).
+-- fecha_referencia ("hoy") se puede fijar con --vars; la CI la usa para correr
+-- sobre datos de muestra de una fecha pasada.
 with dias as (
-    select unnest(generate_series(date '2020-01-01', current_date, interval 1 day))::date as fecha
+    select unnest(generate_series(
+        date '2020-01-01', {{ var('fecha_referencia', 'current_date') }}, interval 1 day
+    ))::date as fecha
 ),
 fix as (
     select fecha

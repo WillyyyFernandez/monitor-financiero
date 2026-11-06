@@ -1,0 +1,63 @@
+# Integración continua: en cada push y pull request a main.
+# Corre sobre datos de muestra fijos (ci/fixtures/), sin red ni tokens:
+# lo que se prueba es el código (modelos, tests, Dagster, Docker), no las APIs.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dbt-y-dagster:
+    name: dbt build y validación de Dagster
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # "Hoy" para los modelos y tests que dependen de la fecha: un día después
+      # del último dato de muestra (2025-03-31).
+      FECHA_REFERENCIA: "date '2025-04-02'"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Copiar datos de muestra a la capa bronze
+        run: |
+          mkdir -p data
+          cp -r ci/fixtures/bronze data/bronze
+
+      - name: dbt build (modelos + tests)
+        working-directory: dbt
+        run: dbt build --vars "{fecha_referencia: \"$FECHA_REFERENCIA\"}"
+
+      - name: Validar definiciones de Dagster
+        env:
+          DAGSTER_HOME: ${{ runner.temp }}/dagster_home
+        run: |
+          mkdir -p "$DAGSTER_HOME" && touch "$DAGSTER_HOME/dagster.yaml"
+          dagster definitions validate -m monitor_financiero.definitions
+
+  docker:
+    name: Construir la imagen de Docker
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: docker build
+        run: docker build -t monitor-financiero:ci .

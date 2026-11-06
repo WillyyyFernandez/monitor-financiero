@@ -70,6 +70,20 @@ docker compose cp webserver:/app/data/monitor.duckdb ./monitor.duckdb
   las 20:00 CDMX, lejos de la corrida de las 13:00. Si la corrida diaria no ocurrió
   (máquina apagada, daemon caído), la revisión queda en rojo.
 
+## Integración continua
+
+`.github/workflows/ci.yml` corre en cada push y pull request a `main`:
+
+1. `dbt build` (modelos y 43 tests) sobre datos de muestra fijos en
+   `ci/fixtures/bronze/` (enero 2024 a marzo 2025, datos públicos). No usa red ni
+   tokens: prueba el código, no las APIs.
+2. Validación de las definiciones de Dagster.
+3. Construcción de la imagen de Docker.
+
+Los tests que dependen de la fecha usan `--vars fecha_referencia` para que la
+muestra no "envejezca". Si cambia el esquema de bronze, regenera la muestra con
+`python scripts/generar_fixtures_ci.py`.
+
 Si cambias `.env`, recrea los contenedores (`docker restart` no relee el archivo):
 
 ```bash
