@@ -1,0 +1,34 @@
+# Dos servicios con la misma imagen:
+#   webserver -> interfaz de Dagster (solo en 127.0.0.1:3000 del host)
+#   daemon    -> dispara la programación diaria y ejecuta las corridas en cola
+services:
+  webserver:
+    build: .
+    image: monitor-financiero:latest
+    command: dagster-webserver -h 0.0.0.0 -p 3000 -m monitor_financiero.definitions
+    ports:
+      - "127.0.0.1:3000:3000"
+    env_file: .env
+    environment:
+      TZ: America/Mexico_City
+    volumes:
+      - datos:/app/data
+      - estado:/opt/dagster/state
+    restart: unless-stopped
+
+  daemon:
+    image: monitor-financiero:latest
+    command: dagster-daemon run -m monitor_financiero.definitions
+    env_file: .env
+    environment:
+      TZ: America/Mexico_City
+    volumes:
+      - datos:/app/data
+      - estado:/opt/dagster/state
+    depends_on:
+      - webserver
+    restart: unless-stopped
+
+volumes:
+  datos:
+  estado:

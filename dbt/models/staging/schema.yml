@@ -1,0 +1,28 @@
+version: 2
+models:
+  - name: stg_banxico_series
+    columns:
+      - name: id_serie
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['SF43718', 'SF43783', 'SF282', 'SP1']
+      - name: serie
+        tests: [not_null]
+      - name: fecha
+        tests: [not_null]
+      - name: valor
+        tests: [not_null]
+  - name: stg_binance_klines
+    columns:
+      - name: par
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['BTCUSDT', 'ETHUSDT', 'BTCMXN', 'ETHMXN', 'USDTMXN']
+      - name: fecha
+        tests: [not_null]
+      - name: cierre
+        tests: [not_null]

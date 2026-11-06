@@ -1,0 +1,11 @@
+.git
+.venv
+.env
+.env.*
+!.env.example
+data
+.dagster
+dbt/target
+dbt/logs
+dbt/.user.yml
+**/__pycache__

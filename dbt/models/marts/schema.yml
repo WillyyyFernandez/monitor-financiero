@@ -1,0 +1,22 @@
+version: 2
+models:
+  - name: mart_indicadores_diarios
+    description: Indicadores financieros de México por día hábil (Banxico).
+    columns:
+      - name: fecha
+        tests: [unique, not_null]
+      - name: usd_mxn
+        tests: [not_null]
+      - name: inflacion_anual_pct
+        description: Variación anual del INPC, conocida desde el mes siguiente.
+      - name: tasa_real_tiie_pct
+        description: TIIE 28d deflactada con la inflación anual vigente (Fisher).
+  - name: mart_cripto_diario
+    description: Precio de cierre, retornos y volatilidad por par de Binance (velas cerradas, UTC).
+    columns:
+      - name: par
+        tests: [not_null]
+      - name: fecha
+        tests: [not_null]
+      - name: cierre
+        tests: [not_null]

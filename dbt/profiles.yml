@@ -1,0 +1,6 @@
+monitor_financiero:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: ../data/monitor.duckdb

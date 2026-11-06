@@ -1,0 +1,29 @@
+# Configuración de la instancia de Dagster dentro del contenedor.
+# Todo el estado (historial de corridas, programaciones, logs) vive en /opt/dagster/state,
+# que es un volumen de Docker y sobrevive a reinicios.
+storage:
+  sqlite:
+    base_dir: /opt/dagster/state/storage
+
+local_artifact_storage:
+  module: dagster._core.storage.root
+  class: LocalArtifactStorage
+  config:
+    base_dir: /opt/dagster/state
+
+compute_logs:
+  module: dagster._core.storage.local_compute_log_manager
+  class: LocalComputeLogManager
+  config:
+    base_dir: /opt/dagster/state/logs
+
+# Todas las corridas pasan por una cola y se ejecutan de una en una:
+# DuckDB admite un solo proceso escribiendo a la vez.
+run_coordinator:
+  module: dagster._core.run_coordinator
+  class: QueuedRunCoordinator
+  config:
+    max_concurrent_runs: 1
+
+telemetry:
+  enabled: false

@@ -1,0 +1,9 @@
+name: monitor_financiero
+version: "0.1.0"
+profile: monitor_financiero
+model-paths: ["models"]
+seed-paths: ["seeds"]
+models:
+  monitor_financiero:
+    staging:
+      +materialized: view

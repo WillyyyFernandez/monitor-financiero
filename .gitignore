@@ -1,0 +1,12 @@
+# entorno y secretos
+.venv/
+.env
+# datos y estado locales (se generan al correr)
+data/*
+!data/.gitkeep
+.dagster/
+# artefactos de dbt
+dbt/target/
+dbt/logs/
+dbt/.user.yml
+__pycache__/
