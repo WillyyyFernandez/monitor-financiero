@@ -5,16 +5,21 @@ TIIE, CETES, INPC) y Binance (BTC, ETH, USDT en dólares y pesos), modelado con 
 sobre DuckDB y orquestación con Dagster.
 
 ```
-Banxico SIE ─┐                     ┌─ stg_banxico_series ─ int_* ─ mart_indicadores_diarios
-             ├─ raw (DuckDB) ─ dbt ┤
-Binance ─────┘                     └─ stg_binance_klines ──────── mart_cripto_diario
+                      bronze (Parquet inmutable)     staging (dbt)          marts (dbt)
+Banxico SIE ──► data/bronze/banxico_series/ ──► stg_banxico_series ─ int_* ─ mart_indicadores_diarios
+Binance     ──► data/bronze/binance_klines/ ──► stg_binance_klines ──────── mart_cripto_diario
 ```
+
+Cada descarga se guarda como un Parquet nuevo en
+`data/bronze/<fuente>/fecha_carga=AAAA-MM-DD/`, y nunca se reescribe. Staging se
+queda con la versión más reciente de cada dato, así una revisión de Banxico
+reemplaza al valor viejo sin perder el historial de lo que se publicó.
 
 ## Estructura
 
 | Carpeta | Contenido |
 |---|---|
-| `ingesta/` | Scripts de descarga (Banxico completo, Binance incremental) |
+| `ingesta/` | Descarga a bronze (Banxico completo, Binance incremental) y reintentos HTTP |
 | `dbt/` | Modelos `staging`, `intermediate`, `marts` y tests de calidad |
 | `monitor_financiero/` | Definiciones de Dagster: activos, trabajo y programación diaria (7:00 CDMX) |
 | `docker/` | Configuración de la instancia de Dagster para el contenedor |

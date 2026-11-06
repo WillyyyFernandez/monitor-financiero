@@ -1,4 +1,11 @@
 -- Una fila por serie y fecha, con tipos correctos y nombre legible.
+-- bronze guarda una foto completa por descarga; aquí se toma la más reciente
+-- de cada (serie, fecha), así una revisión de Banxico reemplaza al dato viejo.
+with ultima_version as (
+    select *
+    from {{ source('bronze', 'banxico_series') }}
+    qualify row_number() over (partition by id_serie, fecha order by cargado_en desc) = 1
+)
 select
     id_serie,
     case id_serie
@@ -10,4 +17,4 @@ select
     strptime(fecha, '%d/%m/%Y')::date as fecha,
     cast(dato as double) as valor,
     cargado_en
-from {{ source('raw', 'banxico_series') }}
+from ultima_version

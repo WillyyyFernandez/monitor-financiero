@@ -1,4 +1,3 @@
-import os
 import sys
 from pathlib import Path
 
@@ -16,16 +15,16 @@ dbt_project = DbtProject(project_dir=DBT_DIR, profiles_dir=DBT_DIR)
 dbt_project.prepare_if_dev()
 
 
-# La clave coincide con source('raw', 'banxico_series') de dbt, así Dagster
-# dibuja la ingesta como padre de los modelos de staging.
-@asset(key=AssetKey(["raw", "banxico_series"]), group_name="ingesta")
+# Las claves coinciden con source('bronze', ...) de dbt, así Dagster dibuja cada
+# ingesta como padre de su modelo de staging.
+@asset(key=AssetKey(["bronze", "banxico_series"]), group_name="ingesta")
 def banxico_series(context):
-    token = os.environ["BANXICO_TOKEN"]
-    n = banxico.cargar(banxico.descargar(token))
-    context.log.info(f"filas en raw.banxico_series: {n}")
+    resumen = banxico.sincronizar()
+    context.log.info(f"bronze banxico: {resumen}")
+    return MaterializeResult(metadata={"filas": resumen["filas"], "archivo": resumen["archivo"]})
 
 
-@asset(key=AssetKey(["raw", "binance_klines"]), group_name="ingesta")
+@asset(key=AssetKey(["bronze", "binance_klines"]), group_name="ingesta")
 def binance_klines(context):
     resumen = binance.sincronizar()
     context.log.info(f"velas descargadas por par: {resumen}")

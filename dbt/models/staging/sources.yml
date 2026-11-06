@@ -1,7 +1,12 @@
 version: 2
+# Capa bronze: archivos Parquet inmutables, uno por descarga (ver ingesta/bronze.py).
+# Las rutas son relativas a la carpeta dbt/, desde donde corre dbt (igual que profiles.yml).
 sources:
-  - name: raw
-    schema: raw
+  - name: bronze
     tables:
       - name: banxico_series
+        config:
+          external_location: "read_parquet('../data/bronze/banxico_series/*/*.parquet', hive_partitioning = true)"
       - name: binance_klines
+        config:
+          external_location: "read_parquet('../data/bronze/binance_klines/*/*.parquet', hive_partitioning = true)"

@@ -6,4 +6,6 @@ seed-paths: ["seeds"]
 models:
   monitor_financiero:
     staging:
-      +materialized: view
+      # Tablas, no vistas: staging lee Parquet con rutas relativas a dbt/, y una
+      # vista solo funcionaría al consultarla desde esa carpeta.
+      +materialized: table

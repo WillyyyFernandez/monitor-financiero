@@ -1,45 +1,39 @@
-"""Ingesta incremental de velas diarias (klines) públicas de Binance hacia DuckDB (esquema raw).
+"""Ingesta incremental de velas diarias (klines) públicas de Binance hacia la capa bronze.
 
 No requiere llave. Por cada par:
-- Si no hay datos guardados, descarga todo desde DESDE.
-- Si ya hay datos, vuelve a descargar solo las últimas SOLAPE velas en adelante.
+- Si no hay archivos en bronze, descarga todo desde DESDE.
+- Si ya hay, vuelve a descargar solo desde las últimas SOLAPE velas guardadas.
   El solape cubre la vela del día en curso (que aún no cierra y cambia) y
-  cualquier corrección reciente. Esas filas se borran y se reinsertan, así que
-  repetir una corrida no duplica nada.
+  cualquier corrección reciente.
+Cada corrida escribe un Parquet nuevo; nada se borra. Las velas repetidas entre
+archivos se resuelven en staging (dbt) quedándose con la carga más reciente.
 
 Uso:
     python -m ingesta.binance            # incremental
-    python -m ingesta.binance --completo # rehace todo el historial
+    python -m ingesta.binance --completo # vuelve a bajar todo el historial
 """
 import sys
-import time
 from datetime import datetime, timezone
-from pathlib import Path
 
 import duckdb
-import requests
+from ingesta import bronze
+from ingesta.http import get_json
 
 API = "https://api.binance.com/api/v3/klines"
-DB_PATH = Path(__file__).parent.parent / "data" / "monitor.duckdb"
+FUENTE = "binance_klines"
+COLUMNAS = {
+    "par": "varchar", "open_time_ms": "bigint", "open": "varchar", "high": "varchar",
+    "low": "varchar", "close": "varchar", "volume": "varchar", "close_time_ms": "bigint",
+    "quote_volume": "varchar", "trades": "bigint",
+}
 PARES = ["BTCUSDT", "ETHUSDT", "BTCMXN", "ETHMXN", "USDTMXN"]
 DESDE = "2020-01-01"
 SOLAPE = 3  # velas diarias que se vuelven a descargar en cada corrida incremental
 DIA_MS = 86_400_000
 
 
-def _get(params: dict, intentos: int = 5) -> list:
-    """GET con reintentos y espera exponencial ante fallos de red o 429/5xx."""
-    for i in range(intentos):
-        try:
-            r = requests.get(API, params=params, timeout=30)
-            if r.status_code in (418, 429) or r.status_code >= 500:
-                raise requests.HTTPError(f"HTTP {r.status_code}")
-            r.raise_for_status()
-            return r.json()
-        except requests.RequestException:
-            if i == intentos - 1:
-                raise
-            time.sleep(2**i)
+def _get(params: dict) -> list:
+    return get_json(API, params=params, timeout=30)
 
 
 def _ms(fecha_iso: str) -> int:
@@ -61,49 +55,29 @@ def descargar_par(par: str, inicio_ms: int) -> list[tuple]:
     return filas
 
 
-def _asegurar_tabla(con) -> None:
-    con.execute("create schema if not exists raw")
-    con.execute(
-        """create table if not exists raw.binance_klines (
-            par varchar, open_time_ms bigint, open varchar, high varchar, low varchar,
-            close varchar, volume varchar, close_time_ms bigint, quote_volume varchar,
-            trades bigint, cargado_en timestamp default current_timestamp)"""
-    )
-
-
-def _inicio_incremental(con, par: str, completo: bool) -> int:
-    ultimo = con.execute(
-        "select max(open_time_ms) from raw.binance_klines where par = ?", [par]
-    ).fetchone()[0]
-    if completo or ultimo is None:
-        return _ms(DESDE)
-    return ultimo - (SOLAPE - 1) * DIA_MS
-
-
-def sincronizar(pares: list[str] = PARES, completo: bool = False, db_path: Path = DB_PATH) -> dict:
-    """Descarga y carga cada par. Devuelve {par: velas descargadas}."""
-    con = duckdb.connect(str(db_path))
-    _asegurar_tabla(con)
-    resumen = {}
-    for par in pares:
-        inicio = _inicio_incremental(con, par, completo)
-        filas = descargar_par(par, inicio)
-        # Reemplazo atómico del tramo descargado: si algo falla, no queda a medias.
-        con.execute("begin")
-        con.execute(
-            "delete from raw.binance_klines where par = ? and open_time_ms >= ?", [par, inicio]
-        )
-        if filas:
-            con.executemany(
-                """insert into raw.binance_klines
-                   (par, open_time_ms, open, high, low, close, volume, close_time_ms,
-                    quote_volume, trades)
-                   values (?,?,?,?,?,?,?,?,?,?)""",
-                filas,
-            )
-        con.execute("commit")
-        resumen[par] = len(filas)
+def _ultimas_velas() -> dict[str, int]:
+    """Última open_time_ms guardada por par, leída de los Parquet de bronze."""
+    if not bronze.hay_archivos(FUENTE):
+        return {}
+    con = duckdb.connect()
+    filas = con.execute(
+        "select par, max(open_time_ms) from read_parquet(?) group by par", [bronze.glob(FUENTE)]
+    ).fetchall()
     con.close()
+    return dict(filas)
+
+
+def sincronizar(pares: list[str] = PARES, completo: bool = False) -> dict:
+    """Descarga cada par y escribe un único Parquet con todo. Devuelve {par: velas}."""
+    ultimas = {} if completo else _ultimas_velas()
+    filas, resumen = [], {}
+    for par in pares:
+        ultimo = ultimas.get(par)
+        inicio = _ms(DESDE) if ultimo is None else ultimo - (SOLAPE - 1) * DIA_MS
+        nuevas = descargar_par(par, inicio)
+        filas += nuevas
+        resumen[par] = len(nuevas)
+    bronze.escribir(FUENTE, COLUMNAS, filas)
     return resumen
 
 

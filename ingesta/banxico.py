@@ -1,17 +1,19 @@
-"""Ingesta de series del SIE de Banxico hacia DuckDB (esquema raw).
+"""Ingesta de series del SIE de Banxico hacia la capa bronze (Parquet inmutable).
 
-Idempotente: cada corrida reemplaza las filas de las series que descarga.
+Cada corrida descarga el historial completo de las series desde 2020 y lo guarda
+como un archivo nuevo. Banxico puede revisar datos pasados; guardar la foto
+completa de cada día permite ver esas revisiones. Son ~3,600 filas por corrida.
 El token se lee de la variable de entorno BANXICO_TOKEN.
 """
 import os
 from datetime import date
-from pathlib import Path
 
-import duckdb
-import requests
+from ingesta import bronze
+from ingesta.http import get_json
 
 API = "https://www.banxico.org.mx/SieAPIRest/service/v1/series"
-DB_PATH = Path(__file__).parent.parent / "data" / "monitor.duckdb"
+FUENTE = "banxico_series"
+COLUMNAS = {"id_serie": "varchar", "titulo": "varchar", "fecha": "varchar", "dato": "varchar"}
 
 SERIES = {
     "SF43718": "tipo_cambio_fix_usd_mxn",
@@ -24,10 +26,9 @@ SERIES = {
 def descargar(token: str, desde: str = "2020-01-01") -> list[tuple]:
     ids = ",".join(SERIES)
     url = f"{API}/{ids}/datos/{desde}/{date.today().isoformat()}"
-    resp = requests.get(url, headers={"Bmx-Token": token}, timeout=60)
-    resp.raise_for_status()
+    datos = get_json(url, headers={"Bmx-Token": token})
     filas = []
-    for serie in resp.json()["bmx"]["series"]:
+    for serie in datos["bmx"]["series"]:
         for d in serie.get("datos", []):
             if d["dato"] in ("N/E", ""):  # Banxico marca "no existe"
                 continue
@@ -35,27 +36,14 @@ def descargar(token: str, desde: str = "2020-01-01") -> list[tuple]:
     return filas
 
 
-def cargar(filas: list[tuple], db_path: Path = DB_PATH) -> int:
-    con = duckdb.connect(str(db_path))
-    con.execute("create schema if not exists raw")
-    con.execute(
-        """create table if not exists raw.banxico_series (
-            id_serie varchar, titulo varchar, fecha varchar, dato varchar,
-            cargado_en timestamp default current_timestamp)"""
-    )
-    con.execute("delete from raw.banxico_series where id_serie in (%s)" % ",".join("?" * len(SERIES)), list(SERIES))
-    con.executemany("insert into raw.banxico_series (id_serie, titulo, fecha, dato) values (?,?,?,?)", filas)
-    n = con.execute("select count(*) from raw.banxico_series").fetchone()[0]
-    con.close()
-    return n
-
-
-def main() -> int:
+def sincronizar() -> dict:
     token = os.environ.get("BANXICO_TOKEN")
     if not token:
         raise SystemExit("Falta BANXICO_TOKEN en el entorno")
-    return cargar(descargar(token))
+    filas = descargar(token)
+    ruta = bronze.escribir(FUENTE, COLUMNAS, filas)
+    return {"filas": len(filas), "archivo": str(ruta)}
 
 
 if __name__ == "__main__":
-    print("filas en raw.banxico_series:", main())
+    print(sincronizar())
