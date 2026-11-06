@@ -58,6 +58,18 @@ Copiar la base de datos fuera del contenedor (respaldo o evidencia):
 docker compose cp webserver:/app/data/monitor.duckdb ./monitor.duckdb
 ```
 
+## Calidad y frescura
+
+- `dbt build` corre 43 tests: unicidad, nulos, valores permitidos, rangos
+  plausibles, y frescura de los **datos** (la última vela de cada par tiene como
+  mucho 2 días; INPC y CETES, como mucho 80). Los de frescura son de severidad
+  `warn`: avisan sin detener el pipeline.
+- `dbt source freshness` revisa la frescura de la **carga**: más de 26 h sin
+  descarga es aviso y más de 50 h es error.
+- Dagster corre esa revisión en el trabajo `revision_frescura` todos los días a
+  las 20:00 CDMX, lejos de la corrida de las 13:00. Si la corrida diaria no ocurrió
+  (máquina apagada, daemon caído), la revisión queda en rojo.
+
 Si cambias `.env`, recrea los contenedores (`docker restart` no relee el archivo):
 
 ```bash

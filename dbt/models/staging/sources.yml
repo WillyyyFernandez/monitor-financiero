@@ -1,8 +1,18 @@
 version: 2
 # Capa bronze: archivos Parquet inmutables, uno por descarga (ver ingesta/bronze.py).
 # Las rutas son relativas a la carpeta dbt/, desde donde corre dbt (igual que profiles.yml).
+#
+# Frescura de carga (`dbt source freshness`): ¿cuándo llegó la última descarga?
+# cargado_en se guarda en UTC sin zona; dbt lo interpreta como UTC.
+# El pipeline corre una vez al día: más de 26 h sin carga = aviso, más de 50 h
+# (dos corridas perdidas) = error.
 sources:
   - name: bronze
+    config:
+      loaded_at_field: cargado_en
+      freshness:
+        warn_after: {count: 26, period: hour}
+        error_after: {count: 50, period: hour}
     tables:
       - name: banxico_series
         config:
