@@ -96,10 +96,12 @@ def main() -> None:
     traza: list = []
     inicio = time.time()
     respuesta = preguntar(pregunta, traza=traza)
+    # Todo a stdout y en orden: con stdout y stderr separados, `docker compose exec`
+    # los mezclaba y la traza aparecía después de la respuesta.
     for t in traza:
-        print(f"[funcion] {t['funcion']}({t['argumentos']})", file=sys.stderr)
-    print(respuesta)
-    print(f"[{time.time() - inicio:.1f} s]", file=sys.stderr)
+        print(f"[funcion] {t['funcion']}({t['argumentos']})", flush=True)
+    print(respuesta, flush=True)
+    print(f"[{time.time() - inicio:.1f} s]", flush=True)
 
 
 if __name__ == "__main__":
