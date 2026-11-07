@@ -119,3 +119,12 @@ def test_bucle_se_corta_si_el_modelo_no_termina():
                                                "function": {"name": "cobertura", "arguments": "{}"}}]}
 
     assert "máximo" in chat.preguntar("x", llamar=modelo_terco)
+
+
+
+def test_llave_desde_archivo_sin_salto_de_linea(tmp_path, monkeypatch):
+    archivo = tmp_path / "llave"
+    archivo.write_text("abc123\n")  # como llama-api.key: 64 caracteres + salto de línea
+    monkeypatch.setenv("LLM_API_KEY_FILE", str(archivo))
+    monkeypatch.delenv("LLM_API_KEY", raising=False)
+    assert chat._llave() == "abc123"

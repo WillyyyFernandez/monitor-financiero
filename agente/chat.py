@@ -6,7 +6,9 @@ ejecutamos el SQL y le devolvemos el resultado para que redacte la respuesta.
 
 Variables de entorno:
     LLM_BASE_URL  p. ej. http://127.0.0.1:8081/v1
-    LLM_API_KEY   llave del llama-server (nunca en el código)
+    LLM_API_KEY_FILE  ruta a un archivo con la llave del llama-server (preferido:
+                      la llave no queda en variables de entorno ni en .env)
+    LLM_API_KEY       alternativa: la llave directamente (nunca en el código)
     LLM_MODEL     nombre del modelo que expone el servidor
 
 Uso:
@@ -34,11 +36,21 @@ Reglas:
 - Da números con 2 decimales y di de qué periodo son. Sé breve."""
 
 
+def _llave() -> str:
+    ruta = os.environ.get("LLM_API_KEY_FILE")
+    if ruta:
+        with open(ruta) as f:
+            return f.read().strip()
+    if os.environ.get("LLM_API_KEY"):
+        return os.environ["LLM_API_KEY"]
+    raise SystemExit("Falta LLM_API_KEY_FILE o LLM_API_KEY")
+
+
 def _llamar_modelo(mensajes: list[dict]) -> dict:
     url = os.environ["LLM_BASE_URL"].rstrip("/") + "/chat/completions"
     resp = requests.post(
         url,
-        headers={"Authorization": f"Bearer {os.environ['LLM_API_KEY']}"},
+        headers={"Authorization": f"Bearer {_llave()}"},
         json={
             "model": os.environ.get("LLM_MODEL", "local"),
             "messages": mensajes,
