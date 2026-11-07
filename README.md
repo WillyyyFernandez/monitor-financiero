@@ -70,6 +70,40 @@ docker compose cp webserver:/app/data/monitor.duckdb ./monitor.duckdb
   las 20:00 CDMX, lejos de la corrida de las 13:00. Si la corrida diaria no ocurrió
   (máquina apagada, daemon caído), la revisión queda en rojo.
 
+## Agente en lenguaje natural
+
+Un modelo local (Qwen2.5-14B en `llama-server`, CPU) responde preguntas en
+español sobre los marts. El modelo **no escribe SQL**: elige una de seis funciones
+de `agente/funciones.py` (último dato, resumen de un periodo, tasa real de un mes,
+cripto, prima cripto vs FIX, cobertura) y nosotros ejecutamos la consulta
+parametrizada, en solo lectura.
+
+- Terminal: `docker compose exec webserver python -m agente.chat "¿Cuánto subió el dólar en octubre de 2026?"`
+- Web: servicio `chat` en `http://127.0.0.1:8501` (Streamlit). Muestra qué
+  función llamó el modelo y el resultado exacto que usó.
+
+Configuración (la llave nunca va al repo ni a `.env`): `LLM_BASE_URL`,
+`LLM_MODEL` y `LLM_API_KEY_FILE`. En la máquina con el modelo, un
+`docker-compose.override.yml` local monta el archivo de la llave:
+
+```yaml
+services:
+  webserver:
+    environment:
+      LLM_BASE_URL: http://172.17.0.1:8081/v1
+      LLM_MODEL: osint-local
+      LLM_API_KEY_FILE: /run/secrets/llama-api.key
+    volumes:
+      - /ruta/a/llama-api.key:/run/secrets/llama-api.key:ro
+  chat:
+    volumes:
+      - /ruta/a/llama-api.key:/run/secrets/llama-api.key:ro
+```
+
+Evaluación con 6 preguntas (Qwen2.5-14B, 16 hilos de CPU): 6/6 correctas,
+incluida una sin datos (dogecoin) donde el modelo dijo que no podía responder;
+de 13 a 64 s por respuesta.
+
 ## Integración continua
 
 `.github/workflows/ci.yml` corre en cada push y pull request a `main`:

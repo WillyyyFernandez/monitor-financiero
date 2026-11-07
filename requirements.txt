@@ -6,3 +6,4 @@ dbt-duckdb==1.11.1
 duckdb==2.0.0
 requests==2.34.2
 python-dotenv==1.2.4
+streamlit==1.67.0

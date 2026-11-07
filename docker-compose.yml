@@ -1,6 +1,7 @@
-# Dos servicios con la misma imagen:
+# Tres servicios con la misma imagen:
 #   webserver -> interfaz de Dagster (solo en 127.0.0.1:3000 del host)
 #   daemon    -> dispara la programación diaria y ejecuta las corridas en cola
+#   chat      -> chat web con el agente (solo en 127.0.0.1:8501 del host)
 services:
   webserver:
     build: .
@@ -25,6 +26,28 @@ services:
     volumes:
       - datos:/app/data
       - estado:/opt/dagster/state
+    depends_on:
+      - webserver
+    restart: unless-stopped
+
+  # Chat web con el agente (Streamlit), solo en 127.0.0.1:8501 del host.
+  # Lee la base en solo lectura y no recibe los tokens de las APIs (sin env_file).
+  # La llave del LLM se monta en la máquina que lo corre con docker-compose.override.yml
+  # (ver README); por defecto apunta al llama-server en el puente docker0.
+  chat:
+    image: monitor-financiero:latest
+    command: >
+      streamlit run agente/app.py --server.address=0.0.0.0 --server.port=8501
+      --server.headless=true --browser.gatherUsageStats=false
+    ports:
+      - "127.0.0.1:8501:8501"
+    environment:
+      TZ: America/Mexico_City
+      LLM_BASE_URL: ${LLM_BASE_URL:-http://172.17.0.1:8081/v1}
+      LLM_MODEL: ${LLM_MODEL:-osint-local}
+      LLM_API_KEY_FILE: /run/secrets/llama-api.key
+    volumes:
+      - datos:/app/data:ro
     depends_on:
       - webserver
     restart: unless-stopped
