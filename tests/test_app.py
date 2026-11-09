@@ -22,7 +22,8 @@ def _modelo_falso(mensajes):
 @pytest.fixture
 def modelo_falso(monkeypatch):
     original = chat.preguntar
-    monkeypatch.setattr(chat, "preguntar", lambda p, traza=None: original(p, llamar=_modelo_falso, traza=traza))
+    monkeypatch.setattr(chat, "preguntar", lambda p, traza=None, al_paso=None:
+                        original(p, llamar=_modelo_falso, traza=traza, al_paso=al_paso))
 
 
 def test_carga_sin_errores_y_muestra_ultimo_dato():
@@ -40,14 +41,24 @@ def test_pregunta_muestra_respuesta_y_traza(modelo_falso):
     assert any("indicadores_periodo" in t for t in textos)
 
 
-def test_boton_de_ejemplo_lanza_la_pregunta(modelo_falso):
+def test_sugerencia_lanza_la_pregunta_y_desaparece(modelo_falso):
     at = AppTest.from_file(APP).run(timeout=30)
-    at.sidebar.button[1].click().run(timeout=30)
-    assert len(at.session_state["historial"]) == 1
+    chips = at.button_group[0]
+    chips.set_value(chips.options[1]).run(timeout=30)
+    assert not at.exception
+    assert at.session_state["historial"][0]["pregunta"].startswith("¿Cuánto subió o bajó el dólar")
+    at.run(timeout=30)  # en la siguiente vuelta ya hay historial: no hay chips
+    assert len(at.button_group) == 0
+
+
+def test_al_paso_se_llama_por_cada_funcion():
+    vistos = []
+    chat.preguntar("x", llamar=lambda m: _modelo_falso(m), al_paso=vistos.append)
+    assert [p["funcion"] for p in vistos] == ["indicadores_periodo"]
 
 
 def test_modelo_caido_muestra_error_sin_romper(monkeypatch):
-    def caido(p, traza=None):
+    def caido(p, traza=None, al_paso=None):
         raise requests.ConnectionError("sin servidor")
     monkeypatch.setattr(chat, "preguntar", caido)
     at = AppTest.from_file(APP).run(timeout=30)

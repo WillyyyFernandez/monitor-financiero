@@ -7,3 +7,47 @@ toolbarMode = "viewer"
 
 [browser]
 gatherUsageStats = false
+
+# Tema oscuro para datos financieros, adaptado de la plantilla "financial-dashboard"
+# que trae Streamlit (.agents/skills/developing-with-streamlit/assets/templates/themes/).
+# Fuentes del sistema en vez de Google Fonts: el navegador no pide nada a internet.
+[theme]
+base = "dark"
+primaryColor = "#60A5FA"
+backgroundColor = "#0F172A"
+secondaryBackgroundColor = "#1E293B"
+codeBackgroundColor = "#1E293B"
+textColor = "#F1F5F9"
+linkColor = "#60A5FA"
+borderColor = "#334155"
+codeTextColor = "#CBD5E1"
+showWidgetBorder = true
+showSidebarBorder = true
+baseRadius = "6px"
+buttonRadius = "6px"
+font = "sans-serif"
+codeFont = "monospace"
+baseFontSize = 15
+headingFontSizes = ["28px", "22px", "18px", "16px", "14px", "12px"]
+headingFontWeights = [700, 600, 600, 600, 500, 500]
+metricValueFontSize = "1.75rem"
+linkUnderline = false
+greenColor = "#34D399"
+redColor = "#F87171"
+yellowColor = "#FBBF24"
+orangeColor = "#FB923C"
+blueColor = "#60A5FA"
+violetColor = "#A78BFA"
+grayColor = "#94A3B8"
+chartCategoricalColors = ["#60A5FA", "#34D399", "#A78BFA", "#F87171", "#FBBF24", "#38BDF8", "#94A3B8", "#FB923C"]
+
+# La barra lateral, un tono más clara que el área principal, para separar el panel de datos del chat.
+[theme.sidebar]
+backgroundColor = "#111C33"
+secondaryBackgroundColor = "#1E293B"
+codeBackgroundColor = "#1E293B"
+codeTextColor = "#CBD5E1"
+textColor = "#F1F5F9"
+borderColor = "#334155"
+primaryColor = "#60A5FA"
+linkColor = "#60A5FA"

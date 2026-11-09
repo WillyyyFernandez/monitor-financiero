@@ -67,8 +67,12 @@ def _llamar_modelo(mensajes: list[dict]) -> dict:
     return resp.json()["choices"][0]["message"]
 
 
-def preguntar(pregunta: str, llamar=_llamar_modelo, traza: list | None = None) -> str:
-    """Bucle de function calling. `llamar` se puede sustituir en pruebas."""
+def preguntar(pregunta: str, llamar=_llamar_modelo, traza: list | None = None, al_paso=None) -> str:
+    """Bucle de function calling. `llamar` se puede sustituir en pruebas.
+
+    `al_paso(paso)` se llama en cuanto se ejecuta cada función, para que una
+    interfaz pueda mostrar las consultas mientras el modelo sigue trabajando.
+    """
     mensajes = [
         {"role": "system", "content": INSTRUCCIONES.format(hoy=date.today().isoformat())},
         {"role": "user", "content": pregunta},
@@ -87,8 +91,11 @@ def preguntar(pregunta: str, llamar=_llamar_modelo, traza: list | None = None) -
                 resultado = {"error": "los argumentos no son JSON válido"}
             else:
                 resultado = funciones.ejecutar(nombre, args)
+            paso = {"funcion": nombre, "argumentos": ll["function"].get("arguments"), "resultado": resultado}
             if traza is not None:
-                traza.append({"funcion": nombre, "argumentos": ll["function"].get("arguments"), "resultado": resultado})
+                traza.append(paso)
+            if al_paso is not None:
+                al_paso(paso)
             mensajes.append({"role": "tool", "tool_call_id": ll.get("id", nombre),
                              "content": json.dumps(resultado, ensure_ascii=False)})
     return "No pude completar la respuesta en el número máximo de pasos."
