@@ -1,5 +1,10 @@
 # Monitor financiero de México
 
+![Demo: pregunta en lenguaje natural, respuesta del agente y la consulta que la respalda](docs/demo-agente.gif)
+
+*La espera del modelo (unos 30 s en CPU) está recortada a 1.5 s en el GIF; el
+desplegable "Cómo lo calculó" muestra el tiempo real.*
+
 Pipeline de datos de punta a punta: ingesta diaria de Banxico (tipo de cambio FIX,
 TIIE, CETES, INPC) y Binance (BTC, ETH, USDT en dólares y pesos), modelado con dbt
 sobre DuckDB y orquestación con Dagster.
