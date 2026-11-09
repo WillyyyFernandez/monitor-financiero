@@ -33,7 +33,10 @@ Reglas:
 - Responde SOLO con cifras que vengan de las funciones. Si no hay datos, dilo.
 - Convierte fechas relativas ("el mes pasado", "este año") a fechas AAAA-MM-DD antes de llamar.
 - Si no sabes qué fechas hay disponibles, llama primero a cobertura.
-- Da números con 2 decimales y di de qué periodo son. Sé breve."""
+- Da números con 2 decimales y di de qué periodo son. Sé breve.
+- Cuando hables de un cambio en un periodo, da el valor inicial, el final y el porcentaje,
+  con sus fechas reales (las que devuelve la función, que pueden ser días hábiles).
+  Ejemplo: "pasó de 18.37 (1 oct) a 18.80 (30 oct), +2.33 %"."""
 
 
 def _llave() -> str:

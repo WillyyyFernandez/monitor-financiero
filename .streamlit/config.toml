@@ -1,0 +1,9 @@
+# Configuración del chat (Streamlit lee este archivo desde la carpeta de trabajo,
+# que es la raíz del repo en local y /app en el contenedor).
+[client]
+# Oculta Deploy, Rerun y Clear cache; deja las opciones de quien mira la app
+# (imprimir, grabar pantalla, tema).
+toolbarMode = "viewer"
+
+[browser]
+gatherUsageStats = false
