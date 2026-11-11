@@ -75,6 +75,18 @@ docker compose cp webserver:/app/data/monitor.duckdb ./monitor.duckdb
   las 20:00 CDMX, lejos de la corrida de las 13:00. Si la corrida diaria no ocurrió
   (máquina apagada, daemon caído), la revisión queda en rojo.
 
+## Dashboard público
+
+`dashboard/app.py` (Streamlit) muestra el tipo de cambio, las tasas, la inflación,
+bitcoin en pesos y la prima de USDT frente al dólar oficial.
+
+- **En línea:** se publica en Streamlit Community Cloud leyendo una foto de los
+  marts en `dashboard/datos/` (Parquet, ~400 KB). No necesita dbt, Dagster ni la
+  base original; sus dependencias están en `dashboard/requirements.txt`.
+- **Actualizar la foto:** correr la ingesta y `dbt build`, luego
+  `python scripts/exportar_dashboard.py` y hacer commit de `dashboard/datos/`.
+- **Datos en vivo:** con `MONITOR_DB=/ruta/a/monitor.duckdb streamlit run dashboard/app.py`.
+
 ## Agente en lenguaje natural
 
 Un modelo local (Qwen2.5-14B en `llama-server`, CPU) responde preguntas en

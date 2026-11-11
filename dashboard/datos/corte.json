@@ -1,0 +1,17 @@
+{
+  "exportado_utc": "2026-11-11 22:06",
+  "marts": {
+    "mart_indicadores_diarios": {
+      "filas": 1727,
+      "hasta": "2026-11-11"
+    },
+    "mart_cripto_diario": {
+      "filas": 7477,
+      "hasta": "2026-11-10"
+    },
+    "mart_cripto_vs_fix": {
+      "filas": 5955,
+      "hasta": "2026-11-10"
+    }
+  }
+}

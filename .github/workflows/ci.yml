@@ -47,6 +47,11 @@ jobs:
         run: |
           dbt build --vars "{fecha_referencia: \"$FECHA_REFERENCIA\"}"
 
+      - name: Pruebas del dashboard público (sobre la foto en dashboard/datos/)
+        run: |
+          pip install pytest
+          python -m pytest tests/test_dashboard.py -q
+
       - name: Validar definiciones de Dagster
         env:
           DAGSTER_HOME: ${{ runner.temp }}/dagster_home
