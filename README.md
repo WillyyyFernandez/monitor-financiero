@@ -5,6 +5,9 @@
 *La espera del modelo (unos 30 s en CPU) está recortada a 1.5 s en el GIF; el
 desplegable "Cómo lo calculó" muestra el tiempo real.*
 
+**[Dashboard en línea](https://monitor-financiero-4seqidqnjmqmloijab7px7.streamlit.app/)** · el chat con el modelo
+corre en un servidor propio y se muestra en el GIF.
+
 Pipeline de datos de punta a punta: ingesta diaria de Banxico (tipo de cambio FIX,
 TIIE, CETES, INPC) y Binance (BTC, ETH, USDT en dólares y pesos), modelado con dbt
 sobre DuckDB y orquestación con Dagster.
@@ -76,6 +79,8 @@ docker compose cp webserver:/app/data/monitor.duckdb ./monitor.duckdb
   (máquina apagada, daemon caído), la revisión queda en rojo.
 
 ## Dashboard público
+
+**[Ver el dashboard en línea](https://monitor-financiero-4seqidqnjmqmloijab7px7.streamlit.app/)**
 
 `dashboard/app.py` (Streamlit) muestra el tipo de cambio, las tasas, la inflación,
 bitcoin en pesos y la prima de USDT frente al dólar oficial.
